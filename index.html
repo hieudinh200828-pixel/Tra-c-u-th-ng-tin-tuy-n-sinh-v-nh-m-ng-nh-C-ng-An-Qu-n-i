@@ -1,0 +1,118 @@
+HTML
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu tuyển sinh Công An - Quân Đội</title>
+    <style>
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #1a4a84; text-align: center; margin-bottom: 10px; }
+        p.subtitle { text-align: center; color: #666; margin-bottom: 25px; }
+        
+        /* Ô tìm kiếm */
+        .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
+        .search-box input { flex: 1; padding: 12px 15px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; outline: none; }
+        .search-box input:focus { border-color: #1a4a84; }
+        
+        /* Bảng hiển thị thông tin */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #1a4a84; color: white; }
+        tr:hover { background-color: #f1f5f9; }
+        .badge-ca { background: #d9534f; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-qd { background: #2e7d32; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .no-result { text-align: center; color: #888; padding: 20px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>TRA CỨU THÔNG TIN SINH CÔNG AN - QUÂN ĐỘI</h1>
+    <p class="subtitle">Nhập tên trường, mã trường hoặc khối xét tuyển để tìm kiếm</p>
+
+    <!-- Ô TÌM KIẾM -->
+    <div class="search-box">
+        <input type="text" id="searchInput" onkeyup="searchData()" placeholder="Ví dụ: Học viện An ninh, C00, KSA, HVQY...">
+    </div>
+
+    <!-- BẢNG KẾT QUẢ -->
+    <table>
+        <thead>
+            <tr>
+                <th>Khối ngành</th>
+                <th>Mã trường</th>
+                <th>Tên trường / Học viện</th>
+                <th>Tổ hợp xét tuyển</th>
+                <th>Điểm chuẩn</th>
+                <th>Ghi chú / Khu vực</th>
+            </tr>
+        </thead>
+        <tbody id="dataTable">
+            <!-- Dữ liệu sẽ hiển thị ở đây -->
+        </tbody>
+    </table>
+    <div id="noResult" class="no-result" style="display: none;">Không tìm thấy kết quả phù hợp</div>
+</div>
+
+<script>
+    // DỮ LIỆU MẪU (Em có thể thêm/sửa thông tin các trường ở đây)
+    const danhSachTruong = [
+        { loai: "CA", ma: "ANH", ten: "Học viện An ninh Nhân dân", toHop: "A00, A01, C03, D01", ghiChu: "Phía Bắc & Phía Nam" },
+        { loai: "CA", ma: "CSH", ten: "Học viện Cảnh sát Nhân dân", toHop: "A00, A01, C03, D01", ghiChu: "Tuyển sinh toàn quốc" },
+        { loai: "CA", ma: "BPS", ten: "Trường Đại học Phòng cháy chữa cháy", toHop: "A00", ghiChu: "Phía Bắc & Phía Nam" },
+        { loai: "CA", ma: "HCH", ten: "Trường Đại học Cảnh sát Nhân dân", toHop: "A00, A01, C03, D01", ghiChu: "Phía Nam" },
+        { loai: "QD", ma: "ZKH", ten: "Học viện Kỹ thuật Quân sự", toHop: "A00, A01", ghiChu: "Tuyển sinh Nam/Nữ toàn quốc" },
+        { loai: "QD", ma: "YQH", ten: "Học viện Quân y", toHop: "A00, B00", ghiChu: "Bác sĩ quân y" },
+        { loai: "QD", ma: "LBH", ten: "Học viện Biên phòng", toHop: "A01, C00", ghiChu: "Tuyển sinh Nam toàn quốc" },
+        { loai: "QD", ma: "PBH", ten: "Trường Sĩ quan Chính trị", toHop: "A00, C00, D01", ghiChu: "Tuyển sinh Nam toàn quốc" }
+    ];
+
+    // Hàm hiển thị danh sách lên màn hình
+    function renderTable(data) {
+        const tbody = document.getElementById("dataTable");
+        const noResult = document.getElementById("noResult");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+            noResult.style.display = "block";
+            return;
+        }
+        noResult.style.display = "none";
+
+        data.forEach(item => {
+            const badge = item.loai === "CA" 
+                ? '<span class="badge-ca">Công An</span>' 
+                : '<span class="badge-qd">Quân Đội</span>';
+            
+            const row = `<tr>
+                <td>${badge}</td>
+                <td><strong>${item.ma}</strong></td>
+                <td>${item.ten}</td>
+                <td>${item.toHop}</td>
+                <td>${item.ghiChu}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Hàm lọc dữ liệu khi nhập từ khóa tìm kiếm
+    function searchData() {
+        const keyword = document.getElementById("searchInput").value.toLowerCase().trim();
+        const filtered = danhSachTruong.filter(item => 
+            item.ten.toLowerCase().includes(keyword) ||
+            item.ma.toLowerCase().includes(keyword) ||
+            item.toHop.toLowerCase().includes(keyword) ||
+            item.ghiChu.toLowerCase().includes(keyword)
+        );
+        renderTable(filtered);
+    }
+
+    // Chạy hiển thị dữ liệu lần đầu khi vào web
+    renderTable(danhSachTruong);
+</script>
+
+</body>
+</html>
