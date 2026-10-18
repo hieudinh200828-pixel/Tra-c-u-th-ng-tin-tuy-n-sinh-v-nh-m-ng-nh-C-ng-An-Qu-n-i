@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu Thông tin & Đề án Tuyển sinh</title>
+    <style>
+        * { box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 950px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        /* Giao diện Trang chủ (Tìm kiếm) */
+        #home-page { text-align: center; padding: 40px 0; }
+        h1 { color: #1a4a84; margin-bottom: 10px; }
+        p.subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box input { width: 100%; padding: 15px 20px; border: 2px solid #ddd; border-radius: 8px; font-size: 18px; outline: none; transition: 0.3s; }
+        .search-box input:focus { border-color: #1a4a84; box-shadow: 0 0 8px rgba(26,74,132,0.2); }
+        
+        /* Danh sách gợi ý tìm kiếm */
+        .suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 250px; overflow-y: auto; text-align: left; z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .suggestion-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s; }
+        .suggestion-item:hover { background-color: #f1f5f9; }
+        .suggestion-item strong { color: #1a4a84; }
+
+        /* Giao diện Trang chi tiết thông tin trường */
+        #detail-page { display: none; text-align: left; }
+        .back-btn { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-bottom: 20px; }
+        .back-btn:hover { background: #5a6268; }
+        .school-title { color: #1a4a84; border-bottom: 2px solid #1a4a84; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .info-section { margin-bottom: 25px; background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #1a4a84; }
+        .info-section h3 { margin-top: 0; color: #333; font-size: 18px; margin-bottom: 10px; }
+        .info-section p { line-height: 1.6; color: #444; margin: 0; }
+
+        /* Bảng điểm chuẩn chuẩn form báo chí */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { padding: 12px 15px; text-align: center; border: 1px solid #ddd; }
+        th { background-color: #1a4a84; color: white; font-weight: bold; }
+        td:nth-child(1) { text-align: left; } /* Tên ngành căn trái cho dễ đọc */
+        tr:hover { background-color: #f1f5f9; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- PHẦN 1: TRANG CHỦ (TÌM KIẾM) -->
+    <div id="home-page">
+        <h1>TRA CỨU THÔNG TIN & ĐỀ ÁN TUYỂN SINH</h1>
+        <p class="subtitle">Nhập tên trường hoặc mã trường để xem bảng điểm chuẩn và chỉ tiêu chi tiết</p>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" onkeyup="filterSchools()" placeholder="Nhập tên trường hoặc mã trường (VD: Học viện An ninh, ANH)...">
+            <div id="suggestionList" class="suggestions" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- PHẦN 2: TRANG CHI TIẾT THÔNG TIN VÀ ĐIỂM CHUẨN -->
+    <div id="detail-page">
+        <button class="back-btn" onclick="goBack()">⬅ Quay lại tìm kiếm</button>
+        <h2 id="schoolName" class="school-title">Tên Trường</h2>
+        
+        <!-- Bảng điểm chuẩn chi tiết theo mẫu -->
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="vertical-align: middle;">Tên ngành</th>
+                        <th rowspan="2" style="vertical-align: middle;">Tổ hợp xét tuyển</th>
+                        <th rowspan="2" style="vertical-align: middle;">Khu vực</th>
+                        <th colspan="2">Điểm chuẩn</th>
+                    </tr>
+                    <tr>
+                        <th>Nam</th>
+                        <th>Nữ</th>
+                    </tr>
+                </thead>
+                <tbody id="diemChuanTable">
+                    <!-- Dữ liệu điểm chuẩn sẽ được nạp tự động vào đây -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Phần tóm tắt đề án tuyển sinh ở dưới -->
+        <div class="info-section" style="margin-top: 25px;">
+            <h3>📌 Tóm tắt Đề án Tuyển sinh & Chỉ tiêu</h3>
+            <p id="schoolOverview">Đang cập nhật thông tin đề án...</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    /* ==========================================================================
+       KHO DỮ LIỆU CÁC TRƯỜNG
+       ========================================================================== */
+    const databaseTruong = [
+        {
+            ma: "ANH",
+            ten: "ĐIỂM CHUẨN HỌC VIỆN AN NINH NHÂN DÂN NĂM 2026",
+            tongQuan: "Năm 2026, 8 học viện, trường Công an nhân dân có 1.870 chỉ tiêu đại học chính quy tuyển mới đào tạo tại trường. Nếu tính thêm 200 chỉ tiêu hợp tác, gửi đào tạo tại các cơ sở ngoài ngành, tổng quy mô là 2.070, giảm 280 so với năm 2025.",
+            nganh: [
+                { tenNganH: "Công nghệ thông tin", toHop: "A00, A01, X26, X27, X28", khuVuc: "Toàn quốc", diemNam: "22.23", diemNu: "-" },
+                { tenNganH: "Nhóm ngành nghiệp vụ An ninh", toHop: "A00, A01, C03, D01, X02, X03, X04", khuVuc: "Phía Bắc", diemNam: "21.23", diemNu: "24.30" },
+                { tenNganH: "An ninh mạng và phòng, chống tội phạm công nghệ cao", toHop: "A00, A01, X26, X27, X28", khuVuc: "Phía Bắc", diemNam: "19.01", diemNu: "24.07" },
+                { tenNganH: "An ninh mạng và phòng, chống tội phạm công nghệ cao", toHop: "A00, A01, X26, X27, X28", khuVuc: "Phía Nam", diemNam: "21.33", diemNu: "23.07" }
+            ]
+        },
+        {
+            ma: "CSH",
+            ten: "ĐIỂM CHUẨN HỌC VIỆN CẢNH SÁT NHÂN DÂN NĂM 2026",
+            tongQuan: "Học viện Cảnh sát nhân dân có 400 chỉ tiêu đào tạo tại trường. Xét tuyển kết hợp theo quy định của Bộ Công an.",
+            nganh: [
+                { tenNganH: "Trinh sát Cảnh sát", toHop: "A00, A01, C03, D01", khuVuc: "Phía Bắc", diemNam: "22.00", diemNu: "24.80" }
+            ]
+        }
+    ];
+
+    // Hàm gợi ý tìm kiếm
+    function filterSchools() {
+        const keyword = document.getElementById("searchInput").value.toLowerCase().trim();
+        const suggestionList = document.getElementById("suggestionList");
+        
+        if (keyword === "") {
+            suggestionList.style.display = "none";
+            return;
+        }
+
+        const matches = databaseTruong.filter(item => 
+            item.ten.toLowerCase().includes(keyword) || 
+            item.ma.toLowerCase().includes(keyword)
+        );
+
+        if (matches.length === 0) {
+            suggestionList.style.display = "none";
+            return;
+        }
+
+        let html = "";
+        matches.forEach(item => {
+            html += `<div class="suggestion-item" onclick="showDetail('${item.ma}')">
+                <strong>[${item.ma}]</strong> ${item.ten}
+            </div>`;
+        });
+
+        suggestionList.innerHTML = html;
+        suggestionList.style.display = "block";
+    }
+
+    // Hàm chuyển sang trang chi tiết
+    function showDetail(maTruong) {
+        const truong = databaseTruong.find(item => item.ma === maTruong);
+        if (!truong) return;
+
+        document.getElementById("home-page").style.display = "none";
+        document.getElementById("detail-page").style.display = "block";
+        document.getElementById("suggestionList").style.display = "none";
+
+        document.getElementById("schoolName").innerText = truong.ten;
+        document.getElementById("schoolOverview").innerText = truong.tongQuan;
+
+        let tableHtml = "";
+        truong.nganh.forEach(n => {
+            tableHtml += `<tr>
+                <td style="text-align: left;"><strong>${n.tenNganH}</strong></td>
+                <td>${n.toHop}</td>
+                <td>${n.khuVuc}</td>
+                <td><strong>${n.diemNam}</strong></td>
+                <td><strong>${n.diemNu}</strong></td>
+            </tr>`;
+        });
+        document.getElementById("diemChuanTable").innerHTML = tableHtml;
+    }
+
+    // Hàm quay lại trang chủ
+    function goBack() {
+        document.getElementById("detail-page").style.display = "none";
+        document.getElementById("home-page").style.display = "block";
+        document.getElementById("searchInput").value = "";
+    }
+</script>
+
+</body>
+</html>
