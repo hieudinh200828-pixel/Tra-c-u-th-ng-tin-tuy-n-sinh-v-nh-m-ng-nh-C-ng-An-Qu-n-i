@@ -158,7 +158,7 @@
         document.getElementById("suggestionList").style.display = "none";
 
         document.getElementById("schoolName").innerText = truong.ten;
-        document.getElementById("schoolOverview").innerText = truong.tongQuan;
+        document.getElementById("schoolOverview").innerHTML = truong.tongQuan;
 
         let tableHtml = "";
         truong.nganh.forEach(n => {
